@@ -1,0 +1,22 @@
+This is the third JPath database and query engine, and the one that I hope will become the first working prototype of JPath Database.
+
+So let's see...
+
+Static context, dynamic context, and local context.
+
+In order from least frequently cloned to most frequently cloned.
+
+(They're all immutable.)
+
+Static context has information about the current module and function, and the
+module's and function's static permissions. Since it has info about the current module and stuff, it can be asked to look up a particular function in a particular imported module when a FunctionCall AST node is evaluated.
+
+Dynamic context has information that's passed down via dynamic scope. It has dynamic permissions (permissions that should be inherited) and the focus, which is the context item, the context position, and the context size.
+
+Local context has information that's passed down dynamically, but only within a particular function. Things like the set of variables fall under local context.
+
+Ok. So, productions.Module represents a module and all of its associated AST stuff.
+
+We have core.Module and stuff like that. A core.Module is built off of core.load, which is a function that... hm, loading needs to be thought out more.
+
+Actually, I'm going to go write up the grammar in Parcon first.
