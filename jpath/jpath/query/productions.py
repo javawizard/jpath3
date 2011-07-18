@@ -110,6 +110,14 @@ class PairIndexer(Production):
     __init__ = init("expr")
 
 
+class Path(Production):
+    __init__ = init("left", "right")
+
+
+class Predicate(Production):
+    __init__ = init("left", "right")
+
+
 class Multiply(Production):
     __init__ = init("left", "right")
 

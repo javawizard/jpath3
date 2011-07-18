@@ -40,9 +40,15 @@ def create_pattern_or_special(text):
 
 
 def create_path(sequence):
-    if len(sequence) != 1:
-        raise NotImplementedError(sequence)
-    return sequence[0]
+    value = sequence[0]
+    for current in sequence[1:]:
+        if isinstance(current, PathWrapper):
+            value = Path(value, current.expr)
+        elif isinstance(current, PredicateWrapper):
+            value = Predicate(value, current.expr)
+        else:
+            raise NotImplementedError(type(current))
+    return value
 
 
 def create_xml_tag((name, attributes, contents, close_name)):
