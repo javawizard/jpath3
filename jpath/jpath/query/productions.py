@@ -7,11 +7,20 @@ def init(*names):
         for name, arg in zip(names, args):
             setattr(self, name, arg)
     __init__.__doc__ = "__init__(%s)" % ", ".join(names)
+    __init__.names = names
     return __init__
 
 
 class Production(object):
-    pass
+    def __str__(self):
+        if getattr(self. __init__, "names", None) is None:
+            raise NotImplementedError
+        names = self.__init__.names
+        return type(self).__name__ + "(" + ", ".join(
+                repr(getattr(self, v)) for v in names) + ")"
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class NumberLiteral(Production):
@@ -23,6 +32,14 @@ class StringLiteral(Production):
     
     def evaluate(self, static, dynamic, local):
         return None
+
+
+class BooleanLiteral(Production):
+    __init__ = init("value")
+
+
+class NullLiteral(Production):
+    __init__ = init()
 
 
 class VarReference(Production):
@@ -75,6 +92,14 @@ class EmptyObjectConstructor(Production):
 
 class EmptySequenceConstructor(Production):
     __init__ = init()
+
+
+class XMLTag(Production):
+    __init__ = init("name", "attributes", "contents")
+
+
+class XMLAttribute(Production):
+    __init__ = init("name", "value")
 
 
 class Indexer(Production):
@@ -149,8 +174,68 @@ class IfThenElse(Production):
     __init__  = init("condition", "true", "false")
 
 
-class Satisfies(Production):
+class Quantifier(Production):
     __init__ = init("type", "name", "expr", "condition")
+
+
+class FlworFor(Production):
+    __init__ = init("var", "counter", "expr")
+
+
+class FlworLet(Production):
+    __init__ = init("var", "expr")
+
+
+class FlworWhere(Production):
+    __init__ = init("expr")
+
+
+class FlworOrderBy(Production):
+    __init__ = init("expr")
+
+
+class FlworAt(Production):
+    __init__ = init("var")
+
+
+class FlworDo(Production):
+    __init__ = init("expr")
+
+
+class Flwor(Production):
+    __init__  = init("constructs", "return_expr")
+
+
+class Insert(Production):
+    __init__ = init("expr", "position")
+
+
+class Delete(Production):
+    __init__ = init("expr")
+
+
+class Replace(Production):
+    __init__ = init("target", "source")
+
+
+class FunctionDefArg(Production):
+    __init__ = init("type", "name", "default")
+
+
+class FunctionDef(Production):
+    __init__ = init("name", "args", "expr")
+
+
+class Import(Production):
+    __init__ = init("type", "source", "target")
+
+
+class Option(Production):
+    __init__ = init("name", "value")
+
+
+class Module(Production):
+    __init__ = init("prolog", "functions", "expr")
 
 
 
