@@ -112,18 +112,34 @@ class ParenExpr(Production):
 
 class ListConstructor(Production):
     __init__ = init("expr")
+    
+    def evaluate(self, static, dynamic, local):
+        value = self.expr.evaluate(static, dynamic, local)
+        return d.StandardSequence([d.StandardList([
+                    value.get_item(i) for i in xrange(value.get_size())
+                ])])
 
 
 class EmptyListConstructor(Production):
     __init__ = init()
+    
+    def evaluate(self, static, dynamic, local):
+        return d.StandardSequence([d.StandardList([])])
 
 
 class ObjectConstructor(Production):
     __init__ = init("expr")
+    
+    def evaluate(self, static, dynamic, local):
+        value = self.expr.evaluate(static, dynamic, local)
+        return d.StandardSequence([d.StandardObject(value)])
 
 
 class EmptyObjectConstructor(Production):
     __init__ = init()
+    
+    def evaluate(self, static, dynamic, local):
+        return d.StandardSequence([d.StandardObject(d.StandardSequence([]))])
 
 
 class EmptySequenceConstructor(Production):
@@ -225,43 +241,96 @@ class Subtract(Production):
 
 class Otherwise(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = self.left.evaluate(static, dynamic, local)
+        if left.get_size() > 0:
+            return left
+        right = self.right.evaluate(static, dynamic, local)
+        return right
 
 
 class GreaterOrEqual(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        return d.StandardSequence([d.StandardBoolean(left >= right)])
 
 
 class LessOrEqual(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        return d.StandardSequence([d.StandardBoolean(left <= right)])
 
 
 class Greater(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        return d.StandardSequence([d.StandardBoolean(left > right)])
 
 
 class Less(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        return d.StandardSequence([d.StandardBoolean(left < right)])
 
 
 class NotEqual(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        return d.StandardSequence([d.StandardBoolean(left != right)])
 
 
 class Equal(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        return d.StandardSequence([d.StandardBoolean(left == right)])
 
 
 class And(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = self.left.evaluate(static, dynamic, local)
+        if not utils.boolean(left):
+            return utils.create_boolean(False)
+        return utils.create_boolean(utils.boolean(self.right.evaluate(static, dynamic, local)))
 
 
 class Or(Production):
     __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = self.left.evaluate(static, dynamic, local)
+        if utils.boolean(left):
+            return utils.create_boolean(True)
+        return utils.create_boolean(utils.boolean(self.right.evaluate(static, dynamic, local)))
 
 
 class PairConstructor(Production):
     __init__ = init("left", "right")
-
+    
+    def evaluate(self, static, dynamic, local):
+        left = self.left.evaluate(static, dynamic, local)
+        right = self.right.evaluate(static, dynamic, local)
+        return d.StandardSequence([d.StandardPair(utils.get_single(left), utils.get_single(right))])
 
 class SequenceConstructor(Production):
     __init__ = init("exprs")
@@ -272,10 +341,21 @@ class SequenceConstructor(Production):
 
 class IfThenElse(Production):
     __init__ = init("condition", "true", "false")
+    
+    def evaluate(self, static, dynamic, local):
+        condition = utils.boolean(self.condition.evaluate(static, dynamic, local))
+        if condition:
+            return self.true.evaluate(static, dynamic, local)
+        else:
+            return self.false.evaluate(static, dynamic, local)
 
 
 class Quantifier(Production):
     __init__ = init("type", "name", "expr", "condition")
+    
+    def evaluate(self, static, dynamic, local):
+        name = self.name
+        expr_value = self.expr.evaluate(static, dynamic, local)
 
 
 class FlworFor(Production):

@@ -33,15 +33,23 @@ def boolean(sequence):
     and a sequence containing a single item which is null are all false. All
     other values are true.
     """
-    if len(sequence) == 0:
+    if sequence.get_size() == 0:
         return False
-    if len(sequence) == 1:
+    if sequence.get_size() == 1:
         item = sequence.get_item(0)
         if isinstance(item, jpath.query.data.Boolean) and not item.get_value():
             return False
         if isinstance(item, jpath.query.data.Null):
             return False
     return True
+
+
+def create_boolean(value):
+    """
+    Creates a sequence containing one item, a StandardBoolean representing the
+    specified Python boolean value.
+    """
+    return jpath.query.data.StandardSequence([jpath.query.data.StandardBoolean(value)])
 
 
 def binary_numeric(left, right, operation):

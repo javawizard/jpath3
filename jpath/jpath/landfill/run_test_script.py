@@ -7,5 +7,5 @@ if __name__ == "__main__":
     i.get_binder("jpath").add_path(os.path.expanduser("~"))
     m = i.bind_module("jpath", "/test.jpath")
     f = m.get_function("example")
-    print f
+    # print f
     print f.call_function(context.DynamicContext(None, None, None), [])
