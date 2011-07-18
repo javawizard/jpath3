@@ -59,6 +59,7 @@ class Item(object):
     def __hash__(self): pass
 
 
+@total_ordering
 class Sequence(object):
     __metaclass__ = ABC
     
@@ -88,6 +89,16 @@ class Sequence(object):
     
     def __iter__(self):
         return self.iterator()
+    
+    def __eq__(self, other):
+        if not isinstance(other, Sequence):
+            return False
+        return self.to_python_list() == other.to_python_list()
+    
+    def __lt__(self, other):
+        if not isinstance(other, Sequence):
+            return NotImplemented
+        return self.to_python_list() < other.to_python_list()
 
 
 @core_type

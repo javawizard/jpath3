@@ -375,30 +375,92 @@ class Quantifier(Production):
 
 class FlworFor(Production):
     __init__ = init("var", "counter", "expr")
+    
+    def generate(self, static, dynamic, local, var_stream):
+        var = self.var
+        counter = self.counter
+        expr = self.expr
+        for var_set in var_stream:
+            new_local = local.new(set_map=var_set)
+            results = expr.evaluate(static, dynamic, new_local)
+            for index, result in enumerate(results):
+                new_vars = var_set.copy()
+                new_vars.update({var: d.StandardSequence([result])})
+                if counter:
+                    new_vars.update({counter: d.StandardSequence([d.StandardNumber(index + 1)])})
+                yield new_vars
 
 
 class FlworLet(Production):
     __init__ = init("var", "expr")
+    
+    def generate(self, static, dynamic, local, var_stream):
+        var = self.var
+        expr = self.expr
+        for var_set in var_stream:
+            new_local = local.new(set_map=var_set)
+            result = expr.evaluate(static, dynamic, new_local)
+            new_vars = var_set.copy()
+            new_vars.update({var: result})
+            yield new_vars
 
 
 class FlworWhere(Production):
     __init__ = init("expr")
+    
+    def generate(self, static, dynamic, local, var_stream):
+        expr = self.expr
+        for var_set in var_stream:
+            new_local = local.new(set_map=var_set)
+            result = expr.evaluate(static, dynamic, new_local)
+            if utils.boolean(result):
+                yield var_set
 
 
 class FlworOrderBy(Production):
     __init__ = init("expr")
+    
+    def generate(self, static, dynamic, local, var_stream):
+        expr = self.expr
+        var_sets = [v for v in var_stream]
+        keys = [expr.evaluate(static, dynamic, local.new(set_map=v)) for v in var_sets]
+        to_sort = zip(keys, var_sets)
+        to_sort.sort(key=lambda x: x[0])
+        for key, var_set in to_sort:
+            yield var_set
 
 
 class FlworAt(Production):
     __init__ = init("var")
+    
+    def generate(self, static, dynamic, local, var_stream):
+        var = self.var
+        for index, var_set in enumerate(var_stream):
+            new_vars = var_set.copy()
+            new_vars.update({var: d.StandardSequence([d.StandardNumber(index + 1)])})
+            yield new_vars
 
 
 class FlworDo(Production):
     __init__ = init("expr")
+    
+    def generate(self, static, dynamic, local, var_stream):
+        expr = self.expr
+        for var_set in var_stream:
+            # Execute but discard the value, since that's what this expr does
+            expr.evaluate(static, dynamic, local.new(set_map=var_set))
+            # Then yield the varset again
+            yield var_set
 
 
 class Flwor(Production):
     __init__ = init("constructs", "return_expr")
+    
+    def evaluate(self, static, dynamic, local):
+        current = [{}]
+        for construct in self.constructs:
+            current = construct.generate(static, dynamic, local, current)
+        return utils.flatten([self.return_expr.evaluate(static, dynamic, local.new(set_map=var_set)) for var_set in current])
 
 
 class Insert(Production):

@@ -1,4 +1,4 @@
-from jpath.query import binder, syntax, jpath_module
+from jpath.query import binder, syntax, jpath_module, exceptions as e
 from jpath.fileutils import File
 import os
 
@@ -24,14 +24,14 @@ class JPathBinder(binder.Binder):
             return self.modules[path]
         # Module has not yet been loaded, so we need to do that now.
         if not self.paths:
-            raise Exception("No paths have been specified for this instance "
+            raise e.ImportException("No paths have been specified for this instance "
                     "of JPathBinder. If you just created a new Interpreter "
                     "object and tried to get it to load a JPath module, you "
                     'need to call interpreter.get_binder("jpath").add_path'
                     '("/some/folder") to tell the interpreter where to look '
                     "for JPath modules on the filesystem.")
         if not path.startswith("/"):
-            raise Exception("JPath module paths must start with a / right "
+            raise e.ImportException("JPath module paths must start with a / right "
                     "now. Relative imports will be allowed at some point in "
                     "the future.")
         file = None
@@ -42,7 +42,7 @@ class JPathBinder(binder.Binder):
                 file = test_file
                 break
         if not file:
-            raise Exception('Module "' + path + '" could not be found on the '
+            raise e.ImportException('Module "' + path + '" could not be found on the '
                     "search path.")
         # We've found the module file. Now we read it in and parse it.
         with file.open() as file_reader:

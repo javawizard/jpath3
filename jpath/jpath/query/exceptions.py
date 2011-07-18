@@ -1,0 +1,20 @@
+
+class JPathException(Exception):
+    """
+    A class representing exceptions thrown by various parts of JPath.
+    """
+
+
+class ImportException(JPathException):
+    """
+    Exception thrown when a module tries to import another module that does
+    not exist or that the corresponding binder can't otherwise properly bind.
+    """
+
+
+class TypeException(JPathException):
+    """
+    Exception thrown while evaluating JPath code when a particular object is
+    not of a particular required type
+    """
+

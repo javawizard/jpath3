@@ -176,10 +176,10 @@ satisfies = ((keyword("some") | keyword("every")) + var_name + ~keyword("in") + 
 flwor_for = (~keyword("for") + var_name + Optional(~keyword("at") + var_name, "")
         + ~keyword("in") + expr)[lambda a: FlworFor(*a)]
 flwor_let = (~keyword("let") + var_name + ":=" + expr)[lambda a: FlworLet(*a)]
-flwor_where = (~keyword("where") + expr)[lambda a: FlworWhere(*a)]
-flwor_order_by = (~keyword("order") + ~keyword("by") + expr)[lambda a: FlworOrderBy(*a)]
-flwor_at = (~keyword("at") + var_name)[lambda a: FlworAt(*a)]
-flwor_do = (~keyword("do") + expr)[lambda a: FlworDo(*a)]
+flwor_where = (~keyword("where") + expr)[FlworWhere]
+flwor_order_by = (~keyword("order") + ~keyword("by") + expr)[FlworOrderBy]
+flwor_at = (~keyword("at") + var_name)[FlworAt]
+flwor_do = (~keyword("do") + expr)[FlworDo]
 flwor_return = (~keyword("return") + expr)
 flwor_construct = (flwor_for | flwor_let | flwor_where | flwor_order_by | flwor_at | flwor_do)(name="flwor construct")
 flwor = (+(flwor_construct) + flwor_return)[lambda (c, r): Flwor(c, r)](name="flwor")
@@ -202,13 +202,13 @@ function_arg_def_list = InfixExpr(function_arg_def[lambda x: [x]], [(",", operat
 function_definition = (~keyword("define") + ~keyword("function") + function_name
         + "(" + Optional(function_arg_def_list, []) + ")" + expr + ~keyword("end"))[lambda a: FunctionDef(*a)](name="function definition")
 
-string_or_literal = (string | +((AnyChar() - CharIn(" \r\n\t"))(desc="any non-whitespace char"))[concat])(name="string or embedded literal")
+string_or_literal = (string | Exact(+((AnyChar() - CharIn(" \r\n\t"))(desc="any non-whitespace char")))[concat])(name="string or embedded literal")
 
 import_binder = Except(id_with_dot, keyword("as") | keyword("import"))(name="import binder")
 import_source = Except(string_or_literal, keyword("as") | keyword("import"))(name="import source")
 import_target = (a_id_no_dot)(name="import target")
-import_statement = (~keyword("import") + (import_binder + import_source | Return(None) + import_source)
-         + Optional(~keyword("as") + import_target, ""))[lambda a: Import(*a)](name="import")
+import_statement = (~keyword("import") + (import_binder + import_source | Return((None,)) + import_source)
+         + Optional(~keyword("as") + import_target, (None,)))[lambda a: Import(*a)](name="import")
 
 option = (~keyword("option") + string_or_literal + string_or_literal)[lambda a: Option(*a)](name="option")
 
