@@ -14,7 +14,7 @@ PathWrapper = namedtuple("PathWrapper", ("expr",))
 PredicateWrapper = namedtuple("PredicateWrapper", ("expr",))
 
 def keyword(text):
-    return Keyword(Literal(text), CharNotIn(alpha_chars))
+    return Keyword(SignificantLiteral(text), CharNotIn(alpha_chars))
 
 
 def lookup_string_escape(char):

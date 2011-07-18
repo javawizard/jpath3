@@ -356,6 +356,21 @@ class Quantifier(Production):
     def evaluate(self, static, dynamic, local):
         name = self.name
         expr_value = self.expr.evaluate(static, dynamic, local)
+        condition = self.condition
+        if self.type == "some": # Existential quantification
+            for value in expr_value.iterator():
+                new_local = local.new(set_name=name, set_value=d.StandardSequence([value]))
+                if utils.boolean(condition.evaluate(static, dynamic, new_local)):
+                    return utils.create_boolean(True)
+            return utils.create_boolean(False)
+        elif self.type == "every": # Universal quantification
+            for value in expr_value.iterator():
+                new_local = local.new(set_name=name, set_value=d.StandardSequence([value]))
+                if not utils.boolean(condition.evaluate(static, dynamic, new_local)):
+                    return utils.create_boolean(False)
+            return utils.create_boolean(True)
+        else:
+            raise Exception("Invalid quantification type: " + self.type)
 
 
 class FlworFor(Production):
