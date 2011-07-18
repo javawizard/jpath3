@@ -20,3 +20,11 @@ Ok. So, productions.Module represents a module and all of its associated AST stu
 We have core.Module and stuff like that. A core.Module is built off of core.load, which is a function that... hm, loading needs to be thought out more.
 
 Actually, I'm going to go write up the grammar in Parcon first.
+
+Ok, done.
+
+So now we have jpath.query.productions and jpath.query.syntax. syntax has the syntax in it (which is mainly made up of the parcon grammar) and productions has the actual production classes in it and soon will have the code for evaluating each production.
+
+So now what?
+
+Well, probably first should be the context module, which has all the context classes in it. Each of these will have a keyworded new method for creating a new context from an old one. I'm going to go do that first.
