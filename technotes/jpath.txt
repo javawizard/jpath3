@@ -28,3 +28,11 @@ So now we have jpath.query.productions and jpath.query.syntax. syntax has the sy
 So now what?
 
 Well, probably first should be the context module, which has all the context classes in it. Each of these will have a keyworded new method for creating a new context from an old one. I'm going to go do that first.
+
+That's done. So now what?
+
+Well, probably module loading first.
+
+Well...
+
+Modules need to import things.

@@ -11,9 +11,10 @@ class Context(object):
 
 
 class StaticContext(Context):
-    _things = ["module", "function"]
+    _things = ["interpreter", "module", "function"]
     
-    def __init__(self, module, function):
+    def __init__(self, interpreter, module, function):
+        self.interpreter = interpreter
         self.module = module
         self.function = function
 
@@ -37,8 +38,16 @@ class LocalContext(Context):
         new = Context.new(self, **kwargs)
         if "set_name" in kwargs:
             new.vars[kwargs["set_name"]] = kwargs["set_value"]
+        if "set_map" in kwargs:
+            new.vars.update(kwargs["set_map"])
         if "unset_name" in kwargs:
             del new.vars[kwargs["unset_name"]]
         return new
+    
+    def get_var(self, name):
+        result = self.vars.get(name, None)
+        if result is None:
+            raise Exception("No such variable: " + name)
+        return result
 
 

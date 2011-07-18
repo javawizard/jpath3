@@ -204,17 +204,17 @@ function_definition = (~keyword("define") + ~keyword("function") + function_name
 
 string_or_literal = (string | +((AnyChar() - CharIn(" \r\n\t"))(desc="any non-whitespace char"))[concat])(name="string or embedded literal")
 
-import_type = Except(id_with_dot, keyword("as") | keyword("import"))(name="import type")
+import_binder = Except(id_with_dot, keyword("as") | keyword("import"))(name="import binder")
 import_source = Except(string_or_literal, keyword("as") | keyword("import"))(name="import source")
 import_target = (a_id_no_dot)(name="import target")
-import_statement = (~keyword("import") + (import_type + import_source | Return(None) + import_source)
+import_statement = (~keyword("import") + (import_binder + import_source | Return(None) + import_source)
          + Optional(~keyword("as") + import_target, ""))[lambda a: Import(*a)](name="import")
 
 option = (~keyword("option") + string_or_literal + string_or_literal)[lambda a: Option(*a)](name="option")
 
 prolog = Optional(+(option | import_statement), [])(name="prolog")
 
-module = (prolog + function_definition[...] + Optional(expr, (None,)))[lambda a: Module(*a)](name="query")
+module = (prolog + function_definition[...] + Optional(expr, EmptySequenceConstructor()))[lambda a: Module(*a)](name="query")
 
 
 
