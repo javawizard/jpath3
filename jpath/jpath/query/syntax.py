@@ -67,10 +67,10 @@ lower = Lower()(name="lower")
 alpha = (upper | lower)(name="alpha")
 alphanum = (alpha | digit)(name="alphanum")
 literal_escape = ("\\" + AnyChar())
-id_with_dot = (+(alphanum | CharIn("-_.") | literal_escape))[concat](name="identifier with dot")
-id_no_dot = (+(alphanum | CharIn("-_") | literal_escape))[concat](name="identifier without dot")
-a_id_with_dot = (alpha + -+(alphanum | CharIn("-_.") | literal_escape))[concat](name="alpha identifier with dot")
-a_id_no_dot = (alpha + -+(alphanum | CharIn("-_") | literal_escape))[concat](name="alpha identifier without dot")
+id_with_dot = Exact(+(alphanum | CharIn("-_.") | literal_escape))[concat](name="identifier with dot")
+id_no_dot = Exact(+(alphanum | CharIn("-_") | literal_escape))[concat](name="identifier without dot")
+a_id_with_dot = Exact(alpha + -+(alphanum | CharIn("-_.") | literal_escape))[concat](name="alpha identifier with dot")
+a_id_no_dot = Exact(alpha + -+(alphanum | CharIn("-_") | literal_escape))[concat](name="alpha identifier without dot")
 
 expr = Forward()
 
@@ -168,12 +168,12 @@ satisfies = ((keyword("some") | keyword("every")) + var_name + ~keyword("in") + 
         )[lambda (a, b, c, d): Quantifier(a, b, c, d)](name="quantifier")
 
 flwor_for = (~keyword("for") + var_name + Optional(~keyword("at") + var_name, "")
-        + ~keyword("in") + expr)[FlworFor]
-flwor_let = (~keyword("let") + var_name + ":=" + expr)[FlworLet]
-flwor_where = (~keyword("where") + expr)[FlworWhere]
-flwor_order_by = (~keyword("order") + ~keyword("by") + expr)[FlworOrderBy]
-flwor_at = (~keyword("at") + var_name)[FlworAt]
-flwor_do = (~keyword("do") + expr)[FlworDo]
+        + ~keyword("in") + expr)[lambda a: FlworFor(*a)]
+flwor_let = (~keyword("let") + var_name + ":=" + expr)[lambda a: FlworLet(*a)]
+flwor_where = (~keyword("where") + expr)[lambda a: FlworWhere(*a)]
+flwor_order_by = (~keyword("order") + ~keyword("by") + expr)[lambda a: FlworOrderBy(*a)]
+flwor_at = (~keyword("at") + var_name)[lambda a: FlworAt(*a)]
+flwor_do = (~keyword("do") + expr)[lambda a: FlworDo(*a)]
 flwor_return = (~keyword("return") + expr)
 flwor_construct = (flwor_for | flwor_let | flwor_where | flwor_order_by | flwor_at | flwor_do)(name="flwor construct")
 flwor = (+(flwor_construct) + flwor_return)[lambda (c, r): Flwor(c, r)](name="flwor")

@@ -2,8 +2,8 @@
 def init(*names):
     def __init__(self, *args):
         if len(names) != len(args):
-            raise Exception("Required " + len(names) + "args but got " + len(args)
-                    + " for constructor for " + str(type(self)))
+            raise Exception("Required " + str(len(names)) + " args but got " + 
+                    str(len(args)) + " for constructor for " + str(type(self)))
         for name, arg in zip(names, args):
             setattr(self, name, arg)
     __init__.__doc__ = "__init__(%s)" % ", ".join(names)
