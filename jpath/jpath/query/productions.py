@@ -66,6 +66,19 @@ class VarReference(Production):
 
 class FunctionCall(Production):
     __init__ = init("name", "args")
+    
+    def evaluate(self, static, dynamic, local):
+        function = static.find_function(self.name)
+        args = self.args
+        closures = function.get_closures(len(args))
+        # TODO: add support for closures
+        arg_values = []
+        for arg, closure in zip(args, closures):
+            if closure:
+                raise NotImplementedError("Closures aren't supported yet")
+            else:
+                arg_values.append(arg.evaluate(static, dynamic, local))
+        return function.call_function(dynamic, arg_values)
 
 
 class Pattern(Production):

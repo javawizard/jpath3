@@ -52,6 +52,21 @@ def create_boolean(value):
     return jpath.query.data.StandardSequence([jpath.query.data.StandardBoolean(value)])
 
 
+def create_number(value):
+    """
+    Creates a sequence containing one item, a StandardNumber representing the
+    specified Python int, long, or float.
+    """
+    return jpath.query.data.StandardSequence([jpath.query.data.StandardNumber(value)])
+
+
+def singleton(value):
+    """
+    Creates a sequence containing only the specified Item instance.
+    """
+    return jpath.query.data.StandardSequence([value])
+
+
 def binary_numeric(left, right, operation):
     """
     Performs a binary numeric operation.

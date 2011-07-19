@@ -1,5 +1,5 @@
 
-from jpath.query.binders import jpath_module
+from jpath.query.binders import jpath_binder, native
 
 class Interpreter(object):
     def __init__(self):
@@ -18,12 +18,13 @@ class Interpreter(object):
     def bind_module(self, type, name):
         if type not in self.binders:
             raise Exception('No binder ' + type +
-                    "' installed on this interpreter")
+                    " installed on this interpreter")
         return self.binders[type].bind_module(name)
 
 
 def add_default_binders(interpreter):
-    interpreter.add_binder(jpath_module.JPathBinder())
+    interpreter.add_binder(jpath_binder.JPathBinder())
+    interpreter.add_binder(native.NativeBinder())
 
 
 

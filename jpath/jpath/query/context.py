@@ -1,5 +1,6 @@
 
 from copy import copy
+from jpath.query import exceptions as e
 
 class Context(object):
     def new(self, **kwargs):
@@ -17,6 +18,46 @@ class StaticContext(Context):
         self.interpreter = interpreter
         self.module = module
         self.function = function
+    
+    def find_function(self, name):
+        # TODO: consider splitting the name into two components, module and
+        # name. These could then be parsed apart by the syntax module itself,
+        # which would allow backslashed dots to appear in the module name.
+        module_name, _, function_name = name.partition(".")
+        if function_name == "" and module_name != "":
+            function_name, module_name = module_name, function_name
+        if module_name == "":
+            # Empty module, so start search with the local function namespace
+            function = self.module.functions.get(function_name)
+            if function: # Found the function in the local namespace
+                return function
+            # Didn't find it, so try imported modules as functions
+            function = self.module.imports.get(function_name)
+            if function: # Found it as a module, and modules are functions, so
+                # return it.
+                return function
+            # Didn't find it, so check imported functions now.
+            function = self.module.imported_functions.get(function_name)
+            if function: # Found it in imported functions
+                return function
+            # Didn't find it, so try the prelude now
+            function = self.module.prelude.get_function(function_name)
+            if function: # Found it in the prelude
+                return function
+            # Didn't find it, so we continue and raise an exception.
+        else:
+            # Named module, so check in the list of imported modules.
+            module = self.module.imports.get(module_name)
+            if module:
+                # Found a module, so try to get the specified function from it
+                function = module.get_function(function_name)
+                if function: # Found the function
+                    return function
+        # Didn't find anything, so toss back an exception
+        raise e.FunctionLookupException("Couldn't find function %s in module "
+                "%s, being called from module %s function %s" % (
+                        function_name, module_name, self.function.name,
+                        self.module.name))
 
 
 class DynamicContext(Context):

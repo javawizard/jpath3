@@ -5,10 +5,12 @@ import os
 class JPathBinder(binder.Binder):
     default_name = "jpath"
     
-    def __init__(self):
+    def __init__(self, add_home_path=True):
         self.modules = {}
         self.paths = []
         self.interpreter = None
+        if add_home_path:
+            self.paths.append(File(__file__).parent().parent().child("library").path)
     
     def set_interpreter(self, interpreter):
         self.interpreter = interpreter

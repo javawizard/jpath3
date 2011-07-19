@@ -388,6 +388,9 @@ class Object(Item):
     @abstract
     def get_pairs(self): pass
     
+    @abstract
+    def get_size(self): pass
+    
     def to_python_dict(self):
         """
         Same as List.to_python_list, but for Objects, and converts them to a
@@ -473,7 +476,7 @@ class StandardString(String):
         return self.value
     
     def __repr__(self):
-        return "StandardString(%s)" % self.value
+        return "StandardString(%s)" % repr(self.value)
 
 
 class StandardNumber(Number):
@@ -565,6 +568,9 @@ class StandardObject(Object):
     
     def get_pairs(self):
         return StandardSequence(self.pair_dict.values())
+    
+    def get_size(self):
+        return len(self.pair_dict)
     
     def __repr__(self):
         return "StandardObject(%s)" % self.get_pairs().to_python_list()

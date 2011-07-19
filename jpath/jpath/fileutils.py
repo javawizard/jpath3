@@ -41,6 +41,9 @@ class File(object):
     
     def child(self, path):
         return File(self.path + "/" + path)
+    
+    def parent(self):
+        return File(internal_path(os.path.dirname(self.native_path)))
 
     
 

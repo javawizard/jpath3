@@ -18,3 +18,9 @@ class TypeException(JPathException):
     not of a particular required type
     """
 
+
+class FunctionLookupException(JPathException):
+    """
+    Exception thrown when a function that doesn't exist is called.
+    """
+

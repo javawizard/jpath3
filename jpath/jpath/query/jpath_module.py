@@ -1,11 +1,12 @@
 
-from jpath.query import module, productions, context
+from jpath.query import module, productions, context, constants
 
 class JPathModule(module.Module):
     def __init__(self, interpreter, path):
         self.imports = {}
         self.options = {}
         self.functions = {}
+        self.imported_functions = {}
         self.interpreter = interpreter
         self.path = path
         self.main_expr = None
@@ -17,14 +18,18 @@ class JPathModule(module.Module):
         return self.name
     
     def get_function(self, name):
-        return self.functions[name]
+        return self.functions.get(name)
     
     def load(self, production):
         """
         Initializes this module from an instance of
         jpath.query.productions.Module.
         """
-        # First thing to do is to resolve imports.
+        # First thing we're going to do is bind the prelude module and import
+        # all of its functions.
+        prelude = self.interpreter.bind_module(*constants.prelude)
+        self.prelude = prelude
+        # Prelude has been imported. Now we resolve module-declared imports.
         for import_statement in production.prolog:
             if not isinstance(import_statement, productions.Import):
                 continue
@@ -76,7 +81,7 @@ class JPathModule(module.Module):
         return self.get_closures(arg_count)
     
     def call_function(self, dynamic_context, args):
-        return self.call_function(dynamic_context, args)
+        return self.main_function.call_function(dynamic_context, args)
     
     def __repr__(self):
         return "<JPathModule %s at %s>" % (repr(self.name), repr(self.path))
