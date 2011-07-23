@@ -24,3 +24,10 @@ class FunctionLookupException(JPathException):
     Exception thrown when a function that doesn't exist is called.
     """
 
+
+class OtherException(JPathException):
+    """
+    Exception thrown when no other subclass of JPathException makes sense to
+    throw for whatever the error was that merited throwing an exception.
+    """
+

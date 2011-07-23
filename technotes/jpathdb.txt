@@ -1,0 +1,65 @@
+First JPath datastore is going to be implemented on top of SQLite.
+
+And speaking of that, the point of this document is stuff on JPath DB.
+
+So... It should be possible to provide different back-end datastores for the database. The first one I'm creating will just use SQLite as a back-end to make things simple for now; the second one will likely include its own actual file format.
+
+Heck, the first one could use any relational database, though I'll probably just stick with SQLite for now, especially because it has "if not exists" that can be used for tables and indexes that other databases don't generally appear to have.
+
+Ok so, we have this notion of a data store. A data store is a class extending the ABC DataStore. At present I'm thinking it will have these functions:
+
+close: This closes the data store. It shouldn't be used after that.
+
+get_root: Returns the root object in the data store.
+
+apply_updates: Takes one argument, a list of updates (which are instances of the various update-representing subclasses of Item), and applies all of them in a single transaction. It should throw an exception if the updates could not be applied and roll back the data store to the state just before apply_updates was called.
+
+Then there will be a class called Database. A Database instance is created by passing in a DataStore instance and an Interpreter instance. It can then be asked to run queries.
+
+Hm... I'm getting into specifics too fast. What do I want this to be able to do?
+
+Well, I want it so that a database can be embedded, where you open a database by specifying a particular data store which you should be able to construct simply by specifying a file or folder that that data store should store its data in. Then I want it so that you can start a JPathDB database server on a particular port targeting a particular data store and it will allow arbitrary connections to be made to it, and the way you connect to it is by creating some sort of Connection object. And, of course, I want a mix of those two, where you embed a database and start a server for it; JPath Application Server would likely be able to do something like that. (JAS woudl be able to connect to a database normally, too.)
+
+So I've come up with a diagram...
+
+...and I've now drawn it into db1.odg (which is an OpenOffice Draw file). (The version I originally drew up about a half hour ago was on paper.)
+
+So, to explain this diagram... Here's the nodes and what they are/mean:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
