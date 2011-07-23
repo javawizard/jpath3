@@ -67,6 +67,14 @@ class DynamicContext(Context):
         self.context_item = context_item
         self.context_position = context_position
         self.context_size = context_size
+        self.userland = {}
+    
+    def new(self, **kwargs):
+        new = Context.new(self, **kwargs)
+        if "userland" in kwargs:
+            new.userland.update(kwargs["userland"])
+        if "unset_userland" in kwargs:
+            del new.userland[kwargs["unset_userland"]]
 
 
 class LocalContext(Context):

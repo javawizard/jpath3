@@ -60,6 +60,10 @@ def create_number(value):
     return jpath.query.data.StandardSequence([jpath.query.data.StandardNumber(value)])
 
 
+def create_empty():
+    return jpath.query.data.StandardSequence([])
+
+
 def singleton(value):
     """
     Creates a sequence containing only the specified Item instance.

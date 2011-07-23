@@ -1,0 +1,33 @@
+Database format is what I'm working on now.
+
+Lists.
+
+How can these be stored?
+
+What about as a binary tree? (not as a binary search tree, just a binary tree)
+
+The idea would be that things would be arranged such that an in-order traversal would end up iterating over all of the items in the list in order.
+
+Each node in the tree keeps track of the number of children it has. Adding a node causes all of its ancestors to have to update their counts, which isn't too hard to do.
+
+To find a node at a particular index, we start our search from the root.
+
+To search from a particular node, we look to see if the index is in the range 1 to left_total, where left_total is the total number of children of the left node. If it is, we recurse into the left node.
+
+If it's not, we see if the index is 1 + left_total. If it is, then the current node is the node we were looking for, so we return it.
+
+If neither of those are true, then we see if the index is less than or equal to left_total + 1 + right_total. If it is, we subtract left_total + 1 from the index, then recurse into the right node with that new index.
+
+If none of the above cases are true, then the index is out of range, and we toss back some sort of error.
+
+Ok, that's simple enough. Now, insertion.
+
+To insert at a particular index, we find the node at that index using the above algorithm. What we do then depends on the node's children:
+
+If the node has no children, we insert the new item as the new left subnode of this node. We increment the node's child count and the child counts of all of its ancestors.
+
+If the node has a left child, we replace the node with the value we're inserting and create a new right subchild and put the original node's value into there. We then increment the node's child count and the child counts of all of its ancestors.
+
+If the node has a right child, we insert the new node as the left subchild and increment the node's (and its ancestors') child counts.
+
+If the node has both a left and a right child, we insert the new node between the node and its left subtree, then increment the node and its ancestors' parent counts.
