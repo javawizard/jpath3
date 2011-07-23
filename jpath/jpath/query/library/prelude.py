@@ -2,6 +2,15 @@
 from jpath.query import data as d, exceptions as e, utils
 import jpath
 
+_functions = {}
+
+def m(name):
+    def decorator(function):
+        _functions[name] = function
+        return function
+    return decorator
+
+
 def size(dynamic):
     thing = dynamic.context_item
     if not isinstance(thing, (d.List, d.Object)):
@@ -41,6 +50,22 @@ def root(dynamic):
                 "function returned a value that was not an instance of Item; "
                 "specifically, it was an instance of " + str(type(root)))
     return utils.singleton(root)
+
+@m("get-module")
+def _get_module(dynamic, name):
+    pass
+
+@m("bind-module")
+def _bind_module(dynamic, binder, name):
+    pass
+
+
+@m("get-function")
+def _get_function(dynamic, module, name):
+    pass
+
+
+del m
 
 
 
