@@ -508,15 +508,34 @@ class Flwor(Production):
 
 
 class Insert(Production):
-    __init__ = init("expr", "position")
+    __init__ = init("value", "position", "reference")
+    
+    def evaluate(self, static, dynamic, local):
+        value = utils.get_single(self.value.evaluate(static, dynamic, local))
+        reference = utils.get_single(self.reference.evaluate(static, dynamic, local))
+        if isinstance(self.position, Production):
+            position = self.position.evaluate(static, dynamic, local)
+            position = utils.get_single_instance(position, d.Number).get_as_int()
+        else:
+            position = self.position
+        return utils.singleton(d.StandardInsert(value, reference, position))
 
 
 class Delete(Production):
     __init__ = init("expr")
+    
+    def evaluate(self, static, dynamic, local):
+        value = self.expr.evaluate(static, dynamic, local)
+        return utils.singleton(d.StandardDelete(value))
 
 
 class Replace(Production):
-    __init__ = init("target", "source")
+    __init__ = init("target", "replacement")
+    
+    def evaluate(self, static, dynamic, local):
+        target = self.target.evaluate(static, dynamic, local)
+        replacement = self.replacement.evaluate(static, dynamic, local)
+        return utils.singleton(d.StandardReplace(target, replacement))
 
 
 class FunctionDefArg(Production):

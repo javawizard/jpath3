@@ -190,8 +190,8 @@ flwor = (+(flwor_construct) + flwor_return)[lambda (c, r): Flwor(c, r)](name="fl
 
 insert_position = (keyword("before") + expr | keyword("after") + expr | 
         (Optional(~keyword("at") + (keyword("start") | keyword("end") | 
-                keyword("position") + expr), []) + ~keyword("into") + expr))[list]
-insert = (~keyword("insert") + expr + insert_position)[Insert](name="insert")
+                ~keyword("position") + expr), (None,)) + ~keyword("into") + expr))
+insert = (~keyword("insert") + expr + insert_position)[lambda a: Insert(*a)](name="insert")
 delete = (~keyword("delete") + 
         (~keyword("value") | ~keyword("values")) + expr)[Delete](name="delete")
 replace = (~keyword("replace") + ~keyword("value") + expr + ~keyword("with") + expr)[Replace](name="replace")

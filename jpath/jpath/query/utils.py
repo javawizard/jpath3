@@ -1,6 +1,5 @@
 
 import jpath.query.data
-import itertools
 
 def get_single(sequence):
     if sequence.get_size() != 1:

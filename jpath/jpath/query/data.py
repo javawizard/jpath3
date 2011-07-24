@@ -604,6 +604,8 @@ class Insert(EmptyItem, IdentityItem, Update):
             result += "at start into " + ref
         elif position == "end":
             result += "at end into " + ref
+        elif position is None:
+            result += "into " + ref
         else:
             result += "at position " + str(position) + " into " + ref
         return result
