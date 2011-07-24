@@ -63,17 +63,8 @@ def root(dynamic):
     return utils.singleton(root)
 
 
-def cat(dynamic, *args):
-    results = []
-    for item in (v for arg in args for v in arg): # Iterate over arguments and
-        # the items in each of the arguments (which will be a Sequence)
-        if not isinstance(item, d.String):
-            raise e.TypeException("A value passed to the cat function was "
-                    "not a string; it was " + str(type(item)) + ". All "
-                    "values passed to cat() must be strings. Consider using "
-                    "string() to convert other values to strings.")
-        results.append(item.get_value())
-    return "".join(results)
+def string(dynamic, value):
+    return utils.get_single(value).to_string()
 
 
 @m("get-module")

@@ -1,5 +1,5 @@
 
-from jpath.query import data as d, utils
+from jpath.query import data as d, utils, exceptions as e
 import operator
 
 def init(*names):
@@ -264,7 +264,34 @@ class Otherwise(Production):
 
 
 class Concatenate(Production):
-    pass
+    __init__ = init("left", "right")
+    
+    def evaluate(self, static, dynamic, local):
+        left = utils.get_single(self.left.evaluate(static, dynamic, local))
+        right = utils.get_single(self.right.evaluate(static, dynamic, local))
+        if left.jpath_type != right.jpath_type:
+            raise e.TypeException("Left and right values to the ++ operator "
+                    "have to be of the same type, but the left value was of "
+                    "type " + str(type(left)) + " and the right value was of "
+                    "type " + str(type(right)))
+        if isinstance(left, d.String): # String concatenation
+            return utils.singleton(d.StandardString(left.get_value() + right.get_value()))
+        if isinstance(left, d.List): # List concatenation
+            return utils.singleton(d.StandardList(left.to_python_list() + right.to_python_list()))
+        if isinstance(left, d.Object): # Object union; take the object on the
+            # left side, create a new copy of it, then update it with the
+            # pairs of the object on the right side. The right side should
+            # override the left side in the case of a key conflict.
+            dictionary = {}
+            for k, v in left:
+                dictionary[k] = v
+            for k, v in right:
+                dictionary[k] = v
+            return utils.singleton(d.StandardObject([d.StandardPair(k, v) for k, v in dictionary.iteritems()]))
+        raise e.TypeException("Values of type " + str(type(left)) + " can't "
+                "be concatenated using the ++ operator. Only values of type "
+                "string, list, or object can be given to ++. To convert "
+                "values to strings, you can use the string() function.")
 
 
 class GreaterOrEqual(Production):

@@ -1,6 +1,6 @@
 
 from abc import ABCMeta as ABC, abstractmethod as abstract
-from jpath.query import utils
+from jpath.query import utils, exceptions as e
 from jpath.sane_total_ordering import total_ordering
 import json
 
@@ -39,6 +39,15 @@ class Item(object):
     
     @abstract
     def to_jpath(self): pass
+    
+    def to_string(self):
+        # I decided to allow everything to be converted to a string and to
+        # take its default JPath representation if another conversion is not
+        # specified, so this is commented out for now.
+        # raise e.TypeException("Trying to convert a value of type " +
+        #         str(type(self)) + " to a string, but this type does not "
+        #         "support converting itself into a string.")
+        return self.to_jpath()
     
     def __eq__(self, other):
         if not isinstance(other, Item):
@@ -317,6 +326,9 @@ class String(Item):
     def to_jpath(self):
         # This is sort of hackish; is it the best way to go about it?
         return json.dumps(self.get_value())
+    
+    def to_string(self):
+        return self.get_value()
 
 
 @core_type
