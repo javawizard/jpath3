@@ -2,6 +2,7 @@
 from abc import ABCMeta as ABC, abstractmethod as abstract
 from jpath.query import utils
 from jpath.sane_total_ordering import total_ordering
+import json
 
 def core_type(c):
     c.jpath_type = c
@@ -36,6 +37,9 @@ class Item(object):
     @abstract
     def less_than(self, other): pass
     
+    @abstract
+    def to_jpath(self): pass
+    
     def __eq__(self, other):
         if not isinstance(other, Item):
             return False
@@ -59,6 +63,55 @@ class Item(object):
     def __hash__(self): pass
 
 
+class IdentityItem(object):
+    """
+    Provides ordering operation implementations that assume that an item is
+    only equal to its identity-wise self. This class is intended to be used
+    for items where such behavior makes sense, such as most updates.
+    """
+    def equal(self, other):
+        return self is other
+    
+    def less_than(self, other):
+        return id(self) < id(other)
+    
+    def __hash__(self):
+        return id(self)
+
+
+class EmptyItem(object):
+    """
+    Provides implementations of get_for_pattern and family that return the
+    empty sequence. This class is intended to be used as a mix-in for items
+    where such behavior makes sense, such as most updates (although a lot of
+    the update classes override get_for_pattern to provide information about
+    the update).
+    
+    This class's implementation of get_for_indexer delegates to
+    get_for_pattern if the value is a string; this can be used to override
+    get_for_pattern if pattern behavior is desired.
+    """
+    def get_children(self): return EmptySequence()
+    
+    def get_pair_children(self): return EmptySequence()
+    
+    def get_for_pattern(self, pattern): return EmptySequence()
+    
+    def get_for_pair_pattern(self, pattern): return EmptySequence()
+    
+    def get_for_indexer(self, value):
+        single = utils.try_single_instance(value, String)
+        if single:
+            return self.get_for_pattern(single.get_value())
+        return EmptySequence()
+    
+    def get_for_pair_indexer(self, value):
+        single = utils.try_single_instance(value, String)
+        if single:
+            return self.get_for_pair_pattern(single.get_value())
+        return EmptySequence()
+
+
 @total_ordering
 class Sequence(object):
     __metaclass__ = ABC
@@ -71,6 +124,11 @@ class Sequence(object):
     
     @abstract
     def is_synthetic(self): pass
+    
+    def to_jpath(self):
+        if self.get_size() == 1:
+            return self.get_item(0).to_jpath()
+        return "(" + ", ".join(v.to_jpath() for v in self) + ")"
     
     def to_python_list(self):
         """
@@ -137,6 +195,12 @@ class Number(Item):
     
     def __hash__(self):
         return hash(self.get_as_float())
+    
+    def to_jpath(self):
+        value = self.get_as_float()
+        if int(value) == value: # value is a whole number
+            return str(int(value))
+        return str(value)
 
 
 @core_type
@@ -172,6 +236,9 @@ class Boolean(Item):
     
     def __hash__(self):
         return hash(self.get_value())
+    
+    def to_jpath(self):
+        return "true" if self.get_value() else "false"
 
 
 @core_type
@@ -204,6 +271,9 @@ class Null(Item):
     
     def __hash__(self):
         return 0
+    
+    def to_jpath(self):
+        return "null"
 
 
 @core_type
@@ -243,6 +313,10 @@ class String(Item):
     
     def __hash__(self):
         return hash(self.get_value())
+    
+    def to_jpath(self):
+        # This is sort of hackish; is it the best way to go about it?
+        return json.dumps(self.get_value())
 
 
 @core_type
@@ -270,6 +344,14 @@ class List(Item):
         through all the items and building up a Python list.
         """
         return [self.get_item(i) for i in xrange(self.get_size())]
+    
+    def __iter__(self):
+        """
+        Returns an iterator over this list's values. Subclasses can override
+        this if they can provide a more efficient implementation.
+        """
+        for i in xrange(self.get_size()):
+            yield self.get_item(i)
     
     def get_children(self):
         return StandardSequence([self.get_item(i) for i in xrange(self.get_size())])
@@ -310,6 +392,9 @@ class List(Item):
     
     def __hash__(self):
         return hash([self.get_item(i) for i in xrange(self.get_size())])
+    
+    def to_jpath(self):
+        return "[" + ", ".join(v.to_jpath() for v in self) + "]"
 
 
 @core_type
@@ -321,6 +406,15 @@ class Pair(Item):
     
     @abstract
     def get_value(self): pass
+    
+    def __iter__(self):
+        """
+        Returns an iterator that yields exactly two items: the key of this
+        Pair and the value of this Pair. Subclasses can override this if they
+        can provide a more efficient implementation.
+        """
+        yield self.get_key()
+        yield self.get_value()
     
     def get_children(self):
         return StandardSequence([])
@@ -364,6 +458,9 @@ class Pair(Item):
     
     def __hash__(self):
         return hash(self.get_key()) ^ hash(self.get_value())
+    
+    def to_jpath(self):
+        return self.get_key().to_jpath() + ": " + self.get_value().to_jpath()
 
 
 @core_type
@@ -398,6 +495,16 @@ class Object(Item):
         """
         return dict([(p.get_key(), p.get_value()) for p in self.get_pairs()])
     
+    def __iter__(self):
+        """
+        Returns an iterator over this object's pairs. Subclasses can override
+        this if they can provide a more efficient implementation.
+        """
+        pairs = self.get_pairs()
+        for v in pairs: # pairs is a sequence, and sequences are also
+            # iterable. TODO: consider changing this to return iter(pairs).
+            yield v
+    
     def get_children(self):
         return self.get_values()
     
@@ -405,16 +512,28 @@ class Object(Item):
         return self.get_pairs()
     
     def get_for_pattern(self, pattern):
-        return StandardSequence([self.get_value(StandardString(pattern))])
+        value = self.get_value(StandardString(pattern))
+        if value is None:
+            return EmptySequence()
+        return utils.singleton(value)
     
     def get_for_pair_pattern(self, pattern):
-        return StandardSequence([self.get_pair(StandardString(pattern))])
+        value = self.get_pair(StandardString(pattern))
+        if value is None:
+            return EmptySequence()
+        return utils.singleton(value)
     
     def get_for_indexer(self, value):
-        return StandardSequence([self.get_value(utils.get_single(value))])
+        result = self.get_value(utils.get_single(value))
+        if result is None:
+            return EmptySequence()
+        return utils.singleton(result)
     
     def get_for_pair_indexer(self, value):
-        return StandardSequence([self.get_pair(utils.get_single(value))])
+        result = self.get_pair(utils.get_single(value))
+        if result is None:
+            return EmptySequence()
+        return utils.singleton(result)
     
     def equal(self, other):
         return self.to_python_dict() == other.to_python_dict()
@@ -424,6 +543,90 @@ class Object(Item):
     
     def __hash__(self):
         return hash(self.to_python_dict())
+    
+    def to_jpath(self):
+        return "{" + ", ".join(v.to_jpath() for v in self) + "}"
+
+
+class Update(Item):
+    __metaclass__ = ABC
+
+
+@core_type
+class Insert(EmptyItem, IdentityItem, Update):
+    __metaclass__ = ABC
+    
+    @abstract
+    def get_value(self):
+        """
+        Returns the value that this insertion should insert.
+        """
+    
+    @abstract
+    def get_reference(self):
+        """
+        Returns the reference. For "insert x ... into y", this is the list or
+        dict into which get_value() should be inserted. For "insert x before
+        y" or "insert x after y", this is the value relative to which
+        get_value() should be inserted.
+        """
+    
+    @abstract
+    def get_position(self):
+        """
+        Returns the position at which this value should be inserted. This is
+        either the string "start", the string "end", the string "before", the
+        string "after", an int to indicate a numerical position, or None to
+        indicate an unspecified "insert x into y".
+        """
+    
+    def to_jpath(self):
+        result = "insert " + self.get_value().to_jpath() + " "
+        ref = self.get_reference().to_jpath()
+        position = self.get_position()
+        if position == "before":
+            result += "before " + ref
+        elif position == "after":
+            result += "after " + ref
+        elif position == "start":
+            result += "at start into " + ref
+        elif position == "end":
+            result += "at end into " + ref
+        else:
+            result += "at position " + str(position) + " into " + ref
+        return result
+
+
+@core_type
+class Delete(EmptyItem, IdentityItem, Update):
+    __metaclass__ = ABC
+    
+    @abstract
+    def get_value(self): pass
+    
+    def to_jpath(self):
+        return "delete value " + self.get_value().to_jpath()
+
+
+@core_type
+class Replace(EmptyItem, IdentityItem, Update):
+    __metaclass__ = ABC
+    
+    @abstract
+    def get_target(self):
+        """
+        Returns the value which is to be replaced.
+        """
+    
+    @abstract
+    def get_replacement(self):
+        """
+        Returns the value which is to replace get_target().
+        """
+    
+    def to_jpath(self):
+        return ("replace value " + self.get_target().to_jpath()
+                + " with " + self.get_replacement().to_jpath())
 
 
 class EmptySequence(Sequence):
@@ -558,13 +761,13 @@ class StandardObject(Object):
             self.value_dict[k] = p.get_value()
     
     def get_value(self, key):
-        return self.value_dict[key]
+        return self.value_dict.get(key, None)
     
     def get_values(self):
         return StandardSequence(self.value_dict.values())
     
     def get_pair(self, key):
-        return self.pair_dict[key]
+        return self.pair_dict.get(key, None)
     
     def get_pairs(self):
         return StandardSequence(self.pair_dict.values())
@@ -577,6 +780,62 @@ class StandardObject(Object):
     
     def to_python_dict(self):
         return self.value_dict
+
+
+class StandardInsert(Insert):
+    def __init__(self, value, reference, position):
+        """
+        Creates a new insertion. (value, reference, position) are,
+        respectively, thus for these different forms of the insert statement:
+        
+        insert x before y: (x, y, "before")
+        insert x after y: (x, y, "after")
+        insert x at start into y: (x, y, "start")
+        insert x at end into y: (x, y, end)
+        insert x at position y into z: (x, z, y)
+        """
+        self.value = value
+        self.reference = reference
+        self.position = position
+    
+    def get_value(self):
+        return self.value
+    
+    def get_reference(self):
+        return self.reference
+    
+    def get_position(self):
+        return self.position
+    
+    def __repr__(self):
+        return "StandardInsert(%s, %s, %s)" % (repr(self.value),
+                repr(self.reference), repr(self.position))
+
+
+class StandardDelete(Delete):
+    def __init__(self, value):
+        self.value = value
+    
+    def get_value(self):
+        return self.value
+    
+    def __repr__(self):
+        return "StandardDelete(%s)" % repr(self.value)
+
+
+class StandardReplace(Replace):
+    def __init__(self, target, replacement):
+        self.target = target
+        self.replacement = replacement
+    
+    def get_target(self):
+        return self.target
+    
+    def get_replacement(self):
+        return self.replacement
+    
+    def __repr__(self):
+        return "StandardReplace(%s, %s)" % (repr(self.target), repr(self.replacement))
 
 
 del core_type

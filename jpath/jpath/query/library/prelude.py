@@ -18,14 +18,25 @@ def size(dynamic):
     return utils.create_number(dynamic.context_item.get_size())
 
 
-def position(dynamic):
-    return utils.create_number(dynamic.context_position)
+def position(dynamic, check=None):
+    if check is None:
+        return utils.create_number(dynamic.context_position)
+    return utils.create_boolean(
+            utils.get_single_instance(check, d.Number).get_as_int() == dynamic.context_position)
 
 
 def count(dynamic, sequence=None):
     if sequence is None:
         return utils.create_number(dynamic.context_size)
     return sequence.get_size()
+
+
+def first(dynamic):
+    return utils.create_boolean(dynamic.context_position == 1)
+
+
+def last(dynamic):
+    return utils.create_boolean(dynamic.context_position == dynamic.context_size)
 
 
 def print_(dynamic, value):
@@ -50,6 +61,20 @@ def root(dynamic):
                 "function returned a value that was not an instance of Item; "
                 "specifically, it was an instance of " + str(type(root)))
     return utils.singleton(root)
+
+
+def cat(dynamic, *args):
+    results = []
+    for item in (v for arg in args for v in arg): # Iterate over arguments and
+        # the items in each of the arguments (which will be a Sequence)
+        if not isinstance(item, d.String):
+            raise e.TypeException("A value passed to the cat function was "
+                    "not a string; it was " + str(type(item)) + ". All "
+                    "values passed to cat() must be strings. Consider using "
+                    "string() to convert other values to strings.")
+        results.append(item.get_value())
+    return "".join(results)
+
 
 @m("get-module")
 def _get_module(dynamic, name):

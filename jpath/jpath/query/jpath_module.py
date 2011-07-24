@@ -72,16 +72,40 @@ class JPathModule(module.Module):
         self.main_function = JPathFunction(self, "<main>", [], [], [], self.main_expr)
     
     def get_min_args(self):
-        return self.main_function.get_min_args()
+        return 0
     
     def get_max_args(self):
-        return self.main_function.get_max_args()
+        return 1
     
     def get_closures(self, arg_count):
-        return self.get_closures(arg_count)
+        return [False] * arg_count
     
     def call_function(self, dynamic_context, args):
-        return self.main_function.call_function(dynamic_context, args)
+        """
+        Calls this module as a function, which runs the module's main code.
+        
+        Args is the empty list to call a module, I.E. modules don't require
+        any JPath function arguments. A single, optional argument can,
+        however, be provided in this list; it should be a JPath sequence
+        containing exactly one value, a JPath object. The keys of this object
+        will be used as the names of variables to predefine when running this
+        module, and the values will be used as the values of the variables.
+        (For now, this means that all variable values will end up being
+        singleton sequences; I might add some way around this in the future.) 
+        """
+        if len(args) == 0:
+            local_context = None
+        else:
+            sequence = args[0]
+            dictionary = sequence.get_item(0)
+            var_map = {}
+            for pair in dictionary:
+                key, value = pair.get_key().get_value(), pair.get_value()
+                if not isinstance(key, (str, unicode)):
+                    raise TypeError(type(key))
+                var_map[key] = value
+            local_context = context.LocalContext().new(set_map=var_map)
+        return self.main_function.call_function(dynamic_context, [], local_context)
     
     def __repr__(self):
         return "<JPathModule %s at %s>" % (repr(self.name), repr(self.path))
@@ -117,14 +141,18 @@ class JPathFunction(module.Function):
     def get_closures(self, arg_count):
         return self.closures[:arg_count]
     
-    def call_function(self, dynamic_context, args):
+    def call_function(self, dynamic_context, args, local_context=None):
+        # TODO: document this and note that local_context should almost always
+        # be None, but is present to allow specialized applications to inject
+        # variables into the function
         if len(args) < self.min_args or len(args) > self.max_args:
             raise Exception("Invalid number of arguments (%s) to function "
                     "%s in module %s" % (len(args), self.name, self.module.path))
         # TODO: Figure out a way to evaluate defaults only once to save
         # computation time
         static_context = context.StaticContext(self.module.interpreter, self.module, self)
-        local_context = context.LocalContext()
+        if local_context is None:
+            local_context = context.LocalContext()
         default_values = []
         for i in range(len(args), self.max_args):
             default_values.append(self.defaults[i].evaluate(static_context, dynamic_context, local_context))

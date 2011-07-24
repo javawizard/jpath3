@@ -63,6 +63,20 @@ class JPathBinder(binder.Binder):
         # Now we initialize it, and we're done!
         module.load(parsed_module)
         return module
+    
+    def create_query(self, text):
+        """
+        Creates and returns a new, anonymous module from the specified text.
+        The module will not be stored in the local module registry, so other
+        things will not be able to use it. Its name will be <query>.
+        
+        This is the function you'd typically use to initialize a JPath query
+        from some arbitrary piece of text the user supplied.
+        """
+        parsed_module = syntax.module.parse_string(text) #@UndefinedVariable
+        module = jpath_module.JPathModule(self.interpreter, "<query>")
+        module.load(parsed_module)
+        return module
 
 
 

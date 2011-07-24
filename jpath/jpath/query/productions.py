@@ -263,6 +263,10 @@ class Otherwise(Production):
         return right
 
 
+class Concatenate(Production):
+    pass
+
+
 class GreaterOrEqual(Production):
     __init__ = init("left", "right")
     

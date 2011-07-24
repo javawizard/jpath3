@@ -75,6 +75,7 @@ class DynamicContext(Context):
             new.userland.update(kwargs["userland"])
         if "unset_userland" in kwargs:
             del new.userland[kwargs["unset_userland"]]
+        return new
 
 
 class LocalContext(Context):

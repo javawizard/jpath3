@@ -9,11 +9,24 @@ def get_single(sequence):
     return sequence.get_item(0)
 
 
+def try_single(sequence):
+    if sequence.get_size() != 1:
+        return None
+    return sequence.get_item(0)
+
+
 def get_single_instance(sequence, type):
     value = get_single(sequence)
     if not isinstance(value, type):
         raise Exception("Expected a value that was an instance of "
                 + str(type) + " but got " + str(value))
+    return value
+
+
+def try_single_instance(sequence, type):
+    value = get_single(sequence)
+    if not isinstance(value, type):
+        return None
     return value
 
 

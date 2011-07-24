@@ -8,7 +8,7 @@ class Connection(object):
     def call(self, module, function, *args): pass
     
     @abstract
-    def run_module(self, module, vars={}): pass
+    def run_module(self, module, update, vars={}): pass
     
     @abstract
-    def run_query(self, query, vars={}): pass
+    def run_query(self, query, update, vars={}): pass

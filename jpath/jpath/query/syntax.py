@@ -134,12 +134,16 @@ infix = InfixExpr(infix, [
         ])
 
 infix = InfixExpr(infix, [
-        ("+" | keyword("plus") | keyword("add"), Add),
+        ((Literal("+") - "++") | keyword("plus") | keyword("add"), Add),
         ("-" | keyword("minus") | keyword("sub"), Subtract)
         ])
 
 infix = InfixExpr(infix, [
             (keyword("otherwise"), Otherwise)
+        ])
+
+infix = InfixExpr(infix, [
+            ("++", Concatenate)
         ])
 
 infix = InfixExpr(infix, [
