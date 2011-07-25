@@ -185,16 +185,16 @@ flwor_order_by = (~keyword("order") + ~keyword("by") + expr)[FlworOrderBy]
 flwor_at = (~keyword("at") + var_name)[FlworAt]
 flwor_do = (~keyword("do") + expr)[FlworDo]
 flwor_return = (~keyword("return") + expr)
-flwor_construct = (flwor_for | flwor_let | flwor_where | flwor_order_by | flwor_at | flwor_do)(name="flwor construct")
+flwor_construct = (flwor_for | flwor_let | flwor_where | flwor_order_by | flwor_at | flwor_do)
 flwor = (+(flwor_construct) + flwor_return)[lambda (c, r): Flwor(c, r)](name="flwor")
 
 insert_position = (keyword("before") + expr | keyword("after") + expr | 
         (Optional(~keyword("at") + (keyword("start") | keyword("end") | 
                 ~keyword("position") + expr), (None,)) + ~keyword("into") + expr))
-insert = (~keyword("insert") + expr + insert_position)[lambda a: Insert(*a)](name="insert")
+insert = (~keyword("insert") + expr + insert_position)[lambda a: Insert(*a)]
 delete = (~keyword("delete") + 
-        (~keyword("value") | ~keyword("values")) + expr)[Delete](name="delete")
-replace = (~keyword("replace") + ~keyword("value") + expr + ~keyword("with") + expr)[Replace](name="replace")
+        (~keyword("value") | ~keyword("values")) + expr)[Delete]
+replace = (~keyword("replace") + ~keyword("value") + expr + ~keyword("with") + expr)[Replace]
 
 update = (insert | delete | replace)(name="update")
 
@@ -216,7 +216,7 @@ import_statement = (~keyword("import") + (import_binder + import_source | Return
 
 option = (~keyword("option") + string_or_literal + string_or_literal)[lambda a: Option(*a)](name="option")
 
-prolog = Optional(+(option | import_statement), [])(name="prolog")
+prolog = (option | import_statement)[...]
 
 module = (prolog + function_definition[...] + Optional(expr, EmptySequenceConstructor()))[lambda a: Module(*a)](name="query")
 
