@@ -1,0 +1,152 @@
+For my first DataStore that I'm writing for JPathDB, I'm going to have it backed by a SQLite database. Once I take a database class at the university (I'm currently attending the University of Utah), I'll write a data store that does everything by itself without relying on another database.
+
+Types, by the way, are 1 = null, 2 = boolean, 3 = number, 4 = string, 5 = list, and 6 = object. The root object has id zero. Objects of different types can share the same id.
+
+So, we have a few tables:
+
+objects:
+
+This holds a single row for each object in the database.
+
+	id integer primary key autoincrement: The id of the object
+	parent integer: The parent of this object; unspecified for the root object
+
+
+
+objectentries:
+
+This holds a single row for every entry in every object in the database.
+
+	id integer: The id of the object to which this entry belongs
+	key text: The key of this object
+	type int8: The type of the value for this entry
+	value integer: The id of this entry's value
+
+
+
+lists:
+
+This holds a single row for each list in the database.
+
+	id integer primary key autoincrement: The id of the list
+	parent integer: The parent of this list
+
+
+
+listvalues:
+
+This holds a single row for every value in every list in the database.
+
+	id integer: The id of the list to which this value belongs
+	position integer: The position of this value in the list; zero-based
+	type int8: The type of the value
+	value integer: The id of this value
+
+
+
+strings:
+
+This holds a single row for every string in the database.
+
+	id integer primary key autoincrement: The id of the string
+	parent integer: The parent of this string
+	content text: The actual text of this string
+
+
+
+numbers:
+
+This holds a single row for every number in the database.
+	
+	id integer primary key autoincrement: The id of the number
+	parent integer: The parent of this number
+	value real: The value of this number
+
+
+
+booleans:
+
+This holds a single row for every boolean in the database.
+
+	id integer primary key autoincrement: The id of the boolean
+	parent integer: The parent of this boolean
+	value boolean: The value of this boolean
+
+
+
+nulls:
+
+This holds a single row for every null in the database.
+
+	id integer primary key autoincrement: Thd id of the null
+	parent integer: The parent of this null
+
+
+
+That should be it! At some point I'd like to compress that down a lot so that every single boolean, for example, doesn't have to have its own identifier. That'll hopefully come at some point.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
