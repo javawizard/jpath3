@@ -2,7 +2,10 @@
 from jpath.query import syntax
 from pango import FontDescription
 
-tail = ["number", "alphanum", "alpha", "digit", "upper", "lower"]
+tail = ["string or embedded literal", "string", "identifier with dot",
+        "identifier without dot",
+        "alpha identifier with dot", "alpha identifier without dot", 
+        "number", "alphanum", "alpha", "digit", "upper", "lower"]
 
 if __name__ == "__main__":
     print "Enter a .png filename where syntax diagrams will be written to"
