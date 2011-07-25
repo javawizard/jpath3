@@ -50,7 +50,7 @@ This holds a single row for every string in the database.
 
 	id integer primary key autoincrement: The id of the string
 	parent integer: The parent of this string
-	content text: The actual text of this string
+	value text: The actual text of this string
 
 
 
