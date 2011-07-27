@@ -1,6 +1,6 @@
 For my first DataStore that I'm writing for JPathDB, I'm going to have it backed by a SQLite database. Once I take a database class at the university (I'm currently attending the University of Utah), I'll write a data store that does everything by itself without relying on another database.
 
-Types, by the way, are 1 = null, 2 = boolean, 3 = number, 4 = string, 5 = list, and 6 = object. The root object has id zero. Objects of different types can share the same id.
+Types, by the way, are 1 = null, 2 = boolean, 3 = number, 4 = string, 5 = list, and 6 = object. The root object has id zero. Objects of different types can share the same id, so a string and a number could both have id 1.
 
 So, we have a few tables:
 
@@ -9,7 +9,6 @@ objects:
 This holds a single row for each object in the database.
 
 	id integer primary key autoincrement: The id of the object
-	parent integer: The parent of this object; unspecified for the root object
 
 
 
@@ -29,7 +28,6 @@ lists:
 This holds a single row for each list in the database.
 
 	id integer primary key autoincrement: The id of the list
-	parent integer: The parent of this list
 
 
 
@@ -49,7 +47,6 @@ strings:
 This holds a single row for every string in the database.
 
 	id integer primary key autoincrement: The id of the string
-	parent integer: The parent of this string
 	value text: The actual text of this string
 
 
@@ -59,7 +56,6 @@ numbers:
 This holds a single row for every number in the database.
 	
 	id integer primary key autoincrement: The id of the number
-	parent integer: The parent of this number
 	value real: The value of this number
 
 
@@ -69,7 +65,6 @@ booleans:
 This holds a single row for every boolean in the database.
 
 	id integer primary key autoincrement: The id of the boolean
-	parent integer: The parent of this boolean
 	value boolean: The value of this boolean
 
 
@@ -79,11 +74,46 @@ nulls:
 This holds a single row for every null in the database.
 
 	id integer primary key autoincrement: Thd id of the null
-	parent integer: The parent of this null
 
 
 
 That should be it! At some point I'd like to compress that down a lot so that every single boolean, for example, doesn't have to have its own identifier. That'll hopefully come at some point.
+
+UPDATE: Each of those tables representing a type used to have a parent column which stored the datatype's parent. I'm deciding to do away with that and instead have the parent id tracked in the actual subclasses of Item passed around through JPath. Since the parent is only needed when performing delete or replace updates, and those all operate on JPath items, this should work fine and will reduce the amount of data that has to be stored in the database.
+
+Also, I just realized that listvalues and objectentries need to be indexed by the id and value to allow deleting things by value. Lists also need to be indexed by id and position to allow deleting at a particular position in the list, which I think I already do anyway to allow access of a value at a particular position in a list.
+
+So... We have subclasses of the Item classes like Object and List and all of those.
+
+Each of these subclasses also subclasses SQLiteItem. This class will have a field containing the value's parent, which will be used by updating statements like replace to work out the object or list that the item in question should be deleted from.
+
+Perhaps if the value is an entry in an object, it should also hold a reference to the key it's entered as. This might potentially allow for doing away with the objectentriesbyidandvalue index in the SQLite database, which would save around ten bytes per object in disk space. Values would similarly hold a reference to the position at which they're present in a list to do away with listvaluesbyidandvalue. When deleting such objects, the database will first be queried to make sure that the value at that key or at that position is the value in question to make sure that the database hasn't undergone modification since.
+
+(Also, quick note: all of the identifier columns are autoincrement so that ids will never be re-used among types. This is important to make sure that an object can't be mistakenly double-deleted; if ids were re-used, this would have the potential to delete another object that just happened to be assigned the same id, which would be a rather bad thing.)
+
+Also, there needs to be a subclass of data.String for representing keys in objects. This should track the object the key is in and the key itself. It needs to be different from the normal SQLiteString as SQLiteString would back itself with an identified string in the strings table, whereas this class, which I'm calling SQLiteKeyString for now, would back itself simply from an object entry in the objectentries table.
+
+So, the classes and how they function. SQLiteNull, SQLiteBoolean, SQLiteNumber, SQLiteString, SQLiteObject, and SQLiteList all store the type of their parent and their parent's id, which allows for things like deleting or replacing a particular one of these instances. They also store a "parent key" attribute of some sort, which, if the parent is an object, is the key under which the value is entered, and if the parent is a list, is the index at which the value is present in the list.
+
+The classes:
+
+SQLiteNull: This class represents null values. It has a field containing its id, and that's it.
+
+SQLiteBoolean: This class represents booleans. It has a field containing its id and a field containing its boolean value; this field is initially set to None and is lazily loaded when the boolean value is first requested.
+
+SQLiteNumber: This class represents numbers. It has a field containing its id and another lazily-initialized field containing its value, similar to how SQLiteBoolean works.
+
+SQLiteString: This class represents strings. It has an id field and a lazily-initialized value field; I may, in the future, have the value only cache itself if it's shorter than a certain length; otherwise, it would cache itself using a weak ref so that if nothing else was referencing the really long string value, it would go away.
+
+SQLiteObject: This class represents objects. It has an id field and that's it for now. Instances of its pair and value types are queried from the database as they are requested, but, of course, this goes through the weak value dictionary that the data store provides that caches objects, so this will usually be more efficient than it seems at first.
+
+SQLitePair: This class represents pairs. It has a field containing the id of the object to which the pair belongs and a field containing the key under which the pair is entered.
+
+SQLiteKeyString: This class represents strings that are keys of objects. It has a field containing the id of the object to which it belongs and a field containing the key. This pointing back toward the object allows two things: it allows deleting an entry in an object simply by deleting the key, and it allows for the key to be the subject of a "replace x with y" update, which would have the effect of renaming the key under which the corresponding value is stored.
+
+SQLiteList: This class represents lists. It has a field containing the id of the list and that's it for now. Values at certain positions in the list are queried from the database as they are requested, but, of course, this goes through the weak value dictionary that the data store provides that caches objects, so this will usually be more efficient than it seems at first.
+
+That's it for now for the classes. And for those of you wondering why I don't load objects and lists into memory to save on database queries, the answer is that I anticipate database objects/lists containing thousands and potentially millions of entries, which would take up way too much memory if all object entries and list values were loaded all at once into memory.
 
 
 

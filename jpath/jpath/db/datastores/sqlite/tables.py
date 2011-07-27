@@ -1,5 +1,5 @@
 
-headers = "id integer primary key autoincrement, parent integer"
+headers = "id integer primary key autoincrement"
 
 prefix = "create table if not exists"
 
