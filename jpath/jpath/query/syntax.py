@@ -3,7 +3,8 @@
 from parcon import (Literal, InfixExpr, SignificantLiteral, Forward,
         number as p_number, Alphanum, CharNotIn, concat, alpha_chars,
         digit_chars, CharIn, digit, Alpha, Upper, Lower, Optional, ZeroOrMore,
-        Keyword, OneOrMore, flatten, Exact, AnyChar, Except, Return)
+        Keyword, OneOrMore, flatten, Exact, AnyChar, Except, Return, Invalid,
+        Whitespace)
 from jpath.query.productions import *
 from collections import namedtuple
 import operator
@@ -174,7 +175,7 @@ infix = (infix + ("," + infix)[...])[flatten][create_sequence](name="sequence")
 if_then_else = (~keyword("if") + expr + ~keyword("then") + expr + ~keyword("else") + expr
         )[lambda (a, b, c): IfThenElse(a, b, c)](name="if")
 
-satisfies = ((keyword("some") | keyword("every")) + var_name + ~keyword("in") + expr + ~keyword("satisfies") + expr
+quantifier = ((keyword("some") | keyword("every")) + var_name + ~keyword("in") + expr + ~keyword("satisfies") + expr
         )[lambda (a, b, c, d): Quantifier(a, b, c, d)](name="quantifier")
 
 flwor_for = (~keyword("for") + var_name + Optional(~keyword("at") + var_name, "")
@@ -195,10 +196,11 @@ insert = (~keyword("insert") + expr + insert_position)[lambda a: Insert(*a)]
 delete = (~keyword("delete") + 
         (~keyword("value") | ~keyword("values")) + expr)[Delete]
 replace = (~keyword("replace") + ~keyword("value") + expr + ~keyword("with") + expr)[Replace]
+merge = (~keyword("merge") + expr + ~keyword("into") + expr)[Merge]
 
-update = (insert | delete | replace)(name="update")
+update = (insert | delete | replace | merge)(name="update")
 
-expr << (if_then_else | satisfies | update | flwor | infix)(name="expr")
+expr << (if_then_else | quantifier | update | flwor | infix)(name="expr")
 
 function_arg_def = (Optional(keyword("closure"), "normal") + var_name + 
         Optional(":=" + atom, (None,)))[lambda a: FunctionDefArg(*a)]
@@ -216,9 +218,14 @@ import_statement = (~keyword("import") + (import_binder + import_source | Return
 
 option = (~keyword("option") + string_or_literal + string_or_literal)[lambda a: Option(*a)](name="option")
 
-prolog = (option | import_statement)[...]
+prolog = (option | import_statement)[...] + function_definition[...]
 
-module = (prolog + function_definition[...] + Optional(expr, EmptySequenceConstructor()))[lambda a: Module(*a)](name="query")
+comment = Forward()
+comment << Exact(Literal("(:") + ((AnyChar() - (Literal("(:") | Literal(":)"))) | comment)[...] + ":)")
+
+comment_or_whitespace = Whitespace() | comment 
+
+module = Exact((prolog + Optional(expr, EmptySequenceConstructor())), comment_or_whitespace)[lambda a: Module(*a)](name="query")
 
 
 

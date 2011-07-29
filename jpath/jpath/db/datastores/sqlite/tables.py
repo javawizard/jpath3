@@ -24,7 +24,9 @@ type int8,
 value integer
 )"""
 
-create_statements = [create_objects, create_lists, create_strings,
+set_auto_vacuum = "pragma auto_vacuum = full"
+
+initialize_statements = [set_auto_vacuum, create_objects, create_lists, create_strings,
         create_numbers, create_booleans, create_nulls,
         create_listvalues, create_objectentries]
 

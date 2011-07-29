@@ -402,13 +402,13 @@ class Quantifier(Production):
         expr_value = self.expr.evaluate(static, dynamic, local)
         condition = self.condition
         if self.type == "some": # Existential quantification
-            for value in expr_value.iterator():
+            for value in expr_value:
                 new_local = local.new(set_name=name, set_value=d.StandardSequence([value]))
                 if utils.boolean(condition.evaluate(static, dynamic, new_local)):
                     return utils.create_boolean(True)
             return utils.create_boolean(False)
         elif self.type == "every": # Universal quantification
-            for value in expr_value.iterator():
+            for value in expr_value:
                 new_local = local.new(set_name=name, set_value=d.StandardSequence([value]))
                 if not utils.boolean(condition.evaluate(static, dynamic, new_local)):
                     return utils.create_boolean(False)
@@ -536,6 +536,15 @@ class Replace(Production):
         target = self.target.evaluate(static, dynamic, local)
         replacement = self.replacement.evaluate(static, dynamic, local)
         return utils.singleton(d.StandardReplace(target, replacement))
+
+
+class Merge(Production):
+    __init__ = init("source", "target")
+    
+    def evaluate(self, static, dynamic, local):
+        source = self.source.evaluate(static, dynamic, local)
+        target = self.target.evaluate(static, dynamic, local)
+        return utils.singleton(d.StandardMerge(source, target))
 
 
 class FunctionDefArg(Production):

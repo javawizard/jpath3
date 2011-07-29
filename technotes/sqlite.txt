@@ -115,6 +115,8 @@ SQLiteList: This class represents lists. It has a field containing the id of the
 
 That's it for now for the classes. And for those of you wondering why I don't load objects and lists into memory to save on database queries, the answer is that I anticipate database objects/lists containing thousands and potentially millions of entries, which would take up way too much memory if all object entries and list values were loaded all at once into memory.
 
+In the future, I'll add something to go update objects in the weak reference map when updates are performed; since atomic values (those that aren't objects or lists) can't change, and objects and lists back themselves from the database, this isn't technically needed to maintain data accuracy, but it would be nice to flag values that have been deleted in the weak reference map as deleted so that if old instances of them are accessed, a "this has been deleted" exception can be thrown.
+
 
 
 

@@ -11,34 +11,130 @@ def core_type(c):
 
 @total_ordering
 class Item(object):
+    """
+    A JPath item. All JPath values are represented as instances of the various
+    subclasses of this class. It contains methods corresponding to the core
+    operations that can be performed on a JPath value.
+    
+    All Items are hashable. Items are not required to be read-only, but most
+    are, and the behavior of an item used as a key in an Object is undefined
+    if the item is changed for some reason.
+    
+    Certain subclasses of Item are known as core types. Such subclasses are
+    decorated with the core_type decorator. It sets the class's jpath_type
+    attribute to the class itself, which allows for determining the core type
+    superclass of any given subclass of Item or any instance of such a
+    subclass by checking the value of its jpath_type attribute.
+    
+    Certain methods defined in Item behave differently depending on what the
+    core type of the instance on which said methods are called is. Those
+    methods mention such behavior in their documentation.
+    
+    Probably the simplest way to describe what a core type is would be to say
+    that it represents the JPath type of an item. For example, Object, List,
+    Number, Boolean, String, and Null are all core types; this allows, for
+    example, the various subclasses of Object to still behave the same.
+    """
     __metaclass__ = ABC
     
     @abstract
-    def get_children(self): pass
+    def get_children(self):
+        """
+        Returns a Sequence containing the children of this item. This is
+        equivalent to the JPath expression *, i.e. a single asterisk.
+        Subclasses of Item that do not have a notion of children (such as
+        Number) should return an empty sequence from this method.
+        """
     
     @abstract
-    def get_pair_children(self): pass
+    def get_pair_children(self):
+        """
+        Returns a Sequence containing the pair children of this item. This is
+        equivalent to the JPath expression @*. Subclasses of Item that do not
+        have a notion of pair children should return an empty sequence from
+        this method.
+        """
     
     @abstract
-    def get_for_pattern(self, pattern): pass
+    def get_for_pattern(self, pattern):
+        """
+        Returns a Sequence containing the values matched by the given pattern,
+        which will be passed in as an instance of Python's str or unicode
+        classes. The JPath expression some-pattern is equivalent to calling
+        get_for_pattern("some-pattern") on the context item.
+        """
     
     @abstract
-    def get_for_pair_pattern(self, pattern): pass
+    def get_for_pair_pattern(self, pattern):
+        """
+        Returns a Sequence containing the values matched by the given pair
+        pattern, which will be passed in as an instance of Python's str or
+        unicode classes. The JPath expression @some-pattern is equivalent to
+        calling get_for_pair_pattern("some-pattern") on the context item.
+        """
     
     @abstract
-    def get_for_indexer(self, value): pass
+    def get_for_indexer(self, value):
+        """
+        Returns a Sequence containing the values matched by the given indexer.
+        The indexer will be passed in as a Sequence. This is equivalent to
+        #some-expr in JPath.
+        """
     
     @abstract
-    def get_for_pair_indexer(self, value): pass
+    def get_for_pair_indexer(self, value):
+        """
+        Returns a Sequence containing the values matched by the given pair
+        indexer. The indexer will be passed in as a Sequence. This is
+        equivalent to @#some-expr in JPath.
+        """
     
     @abstract
-    def equal(self, other): pass
+    def equal(self, other):
+        """
+        Returns True if this Item is equal to the specified Item, False if it
+        is not.
+        
+        This class provides an __eq__ method that checks to see if the
+        specified value is of the same core type as this value. If they
+        aren't, Item.__eq__ automatically returns false without even calling
+        equal. Because of this, you don't need to perform any type checking
+        in this method; when it's called, other will be guaranteed to be an
+        instance of the core type of this value.
+        
+        Most core types implement this method, so subclasses of core type
+        classes that themselves subclass from Item typically won't have to
+        override this method.
+        """
     
     @abstract
-    def less_than(self, other): pass
+    def less_than(self, other):
+        """
+        Returns True if this Item is less than the specified Item, False if it
+        is not.
+        
+        This method follows the same guidelines as the equal method;
+        specifically, it will not be called unless other is of the same core
+        type as self is. When comparing two Items with __lt__ and all of the
+        other comparison operators that Item provides, if the items are not of
+        the same core type, a decision will be made that consistently orders
+        items of one core type before items of another core type. This
+        decision is currently based on comparing the two core types with the
+        less-than operator, which Python defines for normal classes to be
+        arbitrary but consistent. The result is that the ordering of two Item
+        instances of different core types is arbitrary but consistent across a
+        particular Python invocation.
+        
+        As with the equal method, most core types provide an implementation of
+        this method, so subclasses typically won't have to override it. 
+        """
     
     @abstract
-    def to_jpath(self): pass
+    def to_jpath(self):
+        """
+        Converts this value into a JPath expression that could be used to
+        reconstruct a corresponding value of the same core type.
+        """
     
     def to_string(self):
         # I decided to allow everything to be converted to a string and to
@@ -146,17 +242,14 @@ class Sequence(object):
         """
         return [self.get_item(i) for i in xrange(self.get_size)]
     
-    def iterator(self):
+    def __iter__(self):
         """
         Returns an iterator over this sequence's items. Subclasses can
         override this if they can provide a more efficient implementation.
         """
         for i in xrange(self.get_size()):
             yield self.get_item(i)
-    
-    def __iter__(self):
-        return self.iterator()
-    
+        
     def __eq__(self, other):
         if not isinstance(other, Sequence):
             return False
@@ -414,16 +507,30 @@ class Pair(Item):
     __metaclass__ = ABC
     
     @abstract
-    def get_key(self): pass
+    def get_key(self):
+        """
+        Returns the key of this pair.
+        """
     
     @abstract
-    def get_value(self): pass
+    def get_value(self):
+        """
+        Returns the value of this pair.
+        """
     
     def __iter__(self):
         """
         Returns an iterator that yields exactly two items: the key of this
         Pair and the value of this Pair. Subclasses can override this if they
         can provide a more efficient implementation.
+        
+        For those of you that might be wondering why Pairs are even iterable,
+        the reason is so that they can be unpacked in Python expressions; this
+        allows for iterating over the keys and values in an Object, for
+        example, by doing something like this:
+        
+        for key, value in some_object:
+            ...
         """
         yield self.get_key()
         yield self.get_value()
@@ -478,27 +585,47 @@ class Pair(Item):
 @core_type
 class Object(Item):
     """
-    An object.
-    
-    get_values and get_pairs return Sequence objects containing the
-    values/pairs.
+    A JSON object. These are normally created with a JPath/JSON expression of
+    the form {"a": "b", "c": "d"}. This class allows
     """
     __metaclass__ = ABC
     
     @abstract
-    def get_value(self, key): pass
+    def get_value(self, key):
+        """
+        Returns the value contained in this object for the specified key, or
+        None if there is no such key. The key is a JPath Item instance, and
+        it can be an instance of an Item subclass other than String. (JSON
+        itself requires object keys to be strings, but JPath places no such
+        limitation on objects; this is important to remember when writing an
+        Object subclass that does place such a limitation.)
+        """
     
     @abstract
-    def get_pair(self, key): pass
+    def get_pair(self, key):
+        """
+        Returns the pair corresponding to the value contained in this object
+        for the specified key, or None if there is no such key. The key is a
+        JPath Item instance as described in the doc for get_value.
+        """
     
     @abstract
-    def get_values(self): pass
+    def get_values(self):
+        """
+        Returns a Sequence containing all values present in this object.
+        """
     
     @abstract
-    def get_pairs(self): pass
+    def get_pairs(self):
+        """
+        Returns a Sequence containing all pairs present in this object.
+        """
     
     @abstract
-    def get_size(self): pass
+    def get_size(self):
+        """
+        Returns the size of this object, as a normal Python int or long.
+        """
     
     def to_python_dict(self):
         """
@@ -641,6 +768,26 @@ class Replace(EmptyItem, IdentityItem, Update):
     def to_jpath(self):
         return ("replace value " + self.get_target().to_jpath()
                 + " with " + self.get_replacement().to_jpath())
+
+
+@core_type
+class Merge(EmptyItem, IdentityItem, Update):
+    __metaclass__ = ABC
+    
+    @abstract
+    def get_source(self):
+        """
+        Returns the value which is to be merged into the target.
+        """
+    
+    @abstract
+    def get_target(self):
+        """
+        Returns the target, into which the source will be merged.
+        """
+    
+    def to_jpath(self):
+        return "merge " + self.get_source().to_jpath() + " into " + self.get_target().to_jpath()
 
 
 class EmptySequence(Sequence):
@@ -852,7 +999,19 @@ class StandardReplace(Replace):
         return "StandardReplace(%s, %s)" % (repr(self.target), repr(self.replacement))
 
 
-del core_type
+class StandardMerge(Merge):
+    def __init__(self, source, target):
+        self.source = source
+        self.target = target
+    
+    def get_source(self):
+        return self.source
+    
+    def get_target(self):
+        return self.target
+    
+    def __repr__(self):
+        return "StandardMerge(%s, %s)" % (repr(self.source), repr(self.target))
 
 
 
