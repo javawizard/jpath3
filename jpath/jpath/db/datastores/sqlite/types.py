@@ -1,6 +1,9 @@
+
 NULL = 1
 BOOLEAN = 2
 NUMBER = 3
 STRING = 4
 LIST = 5
 OBJECT = 6
+
+NONE = 0

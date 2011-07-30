@@ -14,4 +14,7 @@ class DataStore(object):
     def commit(self): pass
     
     @abstract
+    def rollback(self): pass
+    
+    @abstract
     def close(self): pass
